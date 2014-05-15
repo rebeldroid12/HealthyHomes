@@ -1,0 +1,129 @@
+install.packages('maptools')
+install.packages('spdep')
+install.packages('shapefiles')
+install.packages('RColorBrewer')
+install.packages('lmtest')
+library(RColorBrewer)
+library(shapefiles)
+library(spdep)
+library(maptools)
+library('lmtest')
+
+setwd('/media/toledo/FINALS2013/REM project')
+chicago <- readShapePoly('chiphi')
+
+> plot(chicago)
+> 
+  > #neighbor list
+  > #queen neighbors using poly2nb
+  > chicago_nbq<-poly2nb(chicago)
+coords<-coordinates(chicago)
+plot(chicago)
+plot(chicago_nbq,coords,add=T)
+ 
+  > #row weights
+  > chicago_nbq_w<-nb2listw(chicago_nbq)
+> chicago_nbq_w
+
+
+> chicago$Birth.Rate<-as.numeric(chicago$Birth.Rate)
+> chicago$General.Fe<-as.numeric(chicago$General.Fe)
+> chicago$Low.Birth<-as.numeric(chicago$Low.Birth)
+> chicago$Prenatal.C<-as.numeric(chicago$Prenatal.C)
+> chicago$Preterm.Bi<-as.numeric(chicago$Preterm.Bi)
+> chicago$Teen.Birth<-as.numeric(chicago$Teen.Birth)
+> chicago$Assault..H<-as.numeric(chicago$Assault..H)
+> chicago$Breast.can<-as.numeric(chicago$Breast.can)
+> chicago$Cancer..Al<-as.numeric(chicago$Cancer..Al)
+> chicago$Colorectal<-as.numeric(chicago$Colorectal)
+> chicago$Diabetes.r<-as.numeric(chicago$Diabetes.r)
+> chicago$Firearm.re<-as.numeric(chicago$Firearm.re)
+> chicago$Infant.Mor<-as.numeric(chicago$Infant.Mor)
+> chicago$Lung.Cance<-as.numeric(chicago$Lung.Cance)
+> chicago$Prostate.C<-as.numeric(chicago$Prostate.C)
+> chicago$Stroke..Ce<-as.numeric(chicago$Stroke..Ce)
+> chicago$Childhood<-as.numeric(chicago$Childhood)
+> chicago$Childhoo_1<-as.numeric(chicago$Childhoo_1)
+> chicago$Gonorrhea<-as.numeric(chicago$Gonorrhea)
+> chicago$Gonorrhe_1<-as.numeric(chicago$Gonorrhe_1)
+> chicago$Tuberculos<-as.numeric(chicago$Tuberculos)
+> chicago$Below.Pove<-as.numeric(chicago$Below.Pove)
+> chicago$Crowded.Ho<-as.numeric(chicago$Crowded.Ho)
+> chicago$Dependency<-as.numeric(chicago$Dependency)
+> chicago$No.High.Sc<-as.numeric(chicago$No.High.Sc)
+> chicago$Per.Capita<-as.numeric(chicago$Per.Capita)
+> chicago$Unemployme<-as.numeric(chicago$Unemployme)
+
+chi_breastcan<- lm(Breast.can~ General.Fe + Assault..H + Crowded.Ho + Dependency , data=chicago)
+chi_cancer<-lm(Cancer..Al~Low.Birth + Prenatal.C + Firearm.re +Dependency + Per.Capita , data=chicago)
+chi_colorectal<-lm(Colorectal~Birth.Rate + General.Fe + Low.Birth + Firearm.re + Gonorrhe_1 , data=chicago)
+chi_diabetes<-lm(Diabetes.r~Teen.Birth + Dependency , data=chicago)
+chi_infantmor<-lm(Infant.Mor~General.Fe + Gonorrhea + Gonorrhe_1 + Dependency + Unemployme, data=chicago)
+chi_lungcan<-lm(Lung.Cance~General.Fe + Low.Birth + Firearm.re + Dependency , data=chicago)
+chi_prostate<-lm(Prostate.C~Low.Birth + Prenatal.C + Firearm.re + Dependency, data=chicago)
+chi_stroke<-lm(Stroke..Ce~Low.Birth + Firearm.re + Dependency , data=chicago)
+chi_screening<-lm(Childhood~ Prenatal.C + Gonorrhea + Tuberculos + Per.Capita + Unemployme, data=chicago)
+chi_poison<-lm(Childhoo_1~ Prenatal.C + Assault..H +  Tuberculos + Crowded.Ho + Dependency + Per.Capita , data=chicago)
+
+lm.morantest(chi_breastc,chicago_nbq_w)
+
+bptest(chi_breastcan)
+bptest(chi_cancer)
+bptest(chi_colorectal)
+bptest(chi_diabetes)
+bptest(chi_infantmor)
+bptest(chi_lungcan)
+bptest(chi_prostate)
+bptest(chi_stroke)
+bptest(chi_screening)
+bptest(chi_poison)
+
+
+lm.LMtests(chi_breastcan,chicago_nbq_w,test='all')
+lm.LMtests(chi_infantmor,chicago_nbq_w,test='all')
+lm.LMtests(chi_stroke,chicago_nbq_w,test='all')
+lm.LMtests(chi_screening,chicago_nbq_w,test='all')
+
+Birth Rate
+General fertility rate
+Low birth weight
+prenatal
+teen birth rates
+breast cancer
+cancer all
+colorectal cancer
+diabetes 
+infant mortality rate
+lung cancer
+prostate
+stroke
+Childhood Blood Lead Level Screening
+Childhood Lead Poisoning
+crowded housing
+Dependency 
+
+income per capita
+unemployment
+
+
+lm.LMtests(chi_breastcan,chicago_nbq_w,test='all')
+lm.LMtests(chi_infantmor,chicago_nbq_w,test='all')
+lm.LMtests(chi_stroke,chicago_nbq_w,test='all')
+lm.LMtests(chi_screening,chicago_nbq_w,test='all')
+
+
+######################################################
+####plotting residuals
+summary(chi_diabetes$residuals)
+chicago$diabetesres<-chi_diabetes$residuals
+chicago$dres<-cut(chicago$diabetesres , breaks=c(-50,-30,-15,0,15,30,45),labels=c("< -30","-30 to -15","-15 to 0","0 to 15","15 to 30","> 30"))
+dresplot<-spplot(chicago,"dres",col.regions=brewer.pal(6,"Reds"), main="Diabetes related death SA residual plot",par.settings = list(panel.background=list(col="grey")))
+print(dresplot)
+
+chicago$breastcanres<-chi_breastcan$residuals
+chicago$bcres<-cut(chicago$breastcanres , breaks=c(-30,-15,0,15,30,45),labels=c("< -15","-15 to 0","0 to 15","15 to 30",">30"))
+bcresplot<-spplot(chicago,"bcres",col.regions=brewer.pal(5,"Blues"), main="Breast Cancer SA residual plot",par.settings = list(panel.background=list(col="grey")))
+print(bcresplot)
+
+
+
