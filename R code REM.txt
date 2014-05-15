@@ -1,0 +1,1060 @@
+﻿install.packages('ctv')
+library('ctv')
+
+install.views('Spatial')
+
+install.packages('maptools')
+install.packages('spdep')
+install.packages('shapefiles')
+install.packages(;RColorBrewer')
+#library(maptools)
+#library(shapefiles)
+#library(spdep)
+library('shapefiles')
+library('spdep')
+library('maptools')
+library(RColorBrewer)
+
+setwd('/home/toledo/Desktop/REM project') #ubuntu
+setwd('/media/toledo/FINALS2013/REM project')
+setwd('E:\\REM project') # windows
+getinfo.shape('chiphi.shp')
+##Shapefile type: Polygon, (5), # of Shapes: 77
+chiphi<-read.csv('chipubhealthi.csv',header=TRUE)
+
+
+#shapefile read in
+chicago <- readShapePoly('chiphi')
+class(chicago)
+#[1] "SpatialPolygonsDataFrame"
+#attr(,"package")
+#[1] "sp"
+plot(chicago)
+
+#neighbor list
+#queen neighbors using poly2nb
+chicago_nbq<-poly2nb(chicago)
+coords<-coordinates(chicago)
+plot(chicago)
+plot(chicago_nbq,coords,add=T)
+
+names(chicago)
+[1] "AREA"       "PERIMETER"  "COMAREA_"   "COMAREA_ID" "AREA_NUMBE" "COMMUNITY" 
+[7] "AREA_NUM_1" "SHAPE_AREA" "SHAPE_LEN"  "area_Numer" "Communit_1" "Communit_2"
+[13] "Birth.Rate" "General.Fe" "Low.Birth"  "Prenatal.C" "Preterm.Bi" "Teen.Birth"
+[19] "Assault..H" "Breast.can" "Cancer..Al" "Colorectal" "Diabetes.r" "Firearm.re"
+[25] "Infant.Mor" "Lung.Cance" "Prostate.C" "Stroke..Ce" "Childhood"  "Childhoo_1"
+[31] "Gonorrhea"  "Gonorrhe_1" "Tuberculos" "Below.Pove" "Crowded.Ho" "Dependency"
+[37] "No.High.Sc" "Per.Capita" "Unemployme"
+
+names(chicago_nbq)
+NULL
+  
+#assign weights to areas that are linked. creating spatial wts matrices using neighborhood lists
+#Once our list of neighbors has been created, we assign spatial weights to each relationship
+#Can be binary or variable
+#Even when the values are binary 0/1, the issue of what to do with no-neighbor observations arises 
+#Row standardization is used to create proportional weights in cases where features have an unequal number of neighbors
+#Divide each neighbor weight for a feature by the sum of all neighbor weights
+#Obs i has 3 neighbors, each has a weight of 1/3
+#Obs j has 2 neighbors, each has a weight of 1/2
+
+#Use is you want comparable spatial parameters across different data sets with different connectivity structures
+
+#row weights
+chicago_nbq_w<-nb2listw(chicago_nbq)
+chicago_nbq_w
+
+#Characteristics of weights list object:
+#  Neighbour list object:
+#  Number of regions: 77 
+#Number of nonzero links: 394 
+#Percentage nonzero weights: 6.645303 
+#Average number of links: 5.116883 
+
+#Weights style: W 
+#Weights constants summary:
+#  n   nn S0       S1       S2
+#W 77 5929 77 32.81703 317.4645
+
+#Row-standardised weights increase the influence of links from observations with few neighbours
+#Binary weights vary the influence of observations
+#Those with many neighbours are up-weighted compared to those with few
+
+chicago_nbq_wb<-nb2listw(chicago_nbq,style='B')
+chicago_nbq_wb
+#Characteristics of weights list object:
+#  Neighbour list object:
+#  Number of regions: 77 
+#Number of nonzero links: 394 
+#Percentage nonzero weights: 6.645303 
+#Average number of links: 5.116883 
+
+#Weights style: B 
+#Weights constants summary:
+#  n   nn  S0  S1   S2
+#B 77 5929 394 788 8920
+ 
+> names(chicago_nbq_w)
+[1] "style"      "neighbours" "weights"   
+
+
+#"Birth.Rate" Birth Rate
+#"General.Fe" General Fertility Rate
+#"Low.Birth"  Low Birth Weight
+#"Prenatal.C" Prenatal Care Beginning in First Trimester
+#"Preterm.Bi" Preterm Birth
+#"Teen.Birth" Teen Birth rate
+#"Assault..H" Assault Homicide
+#"Breast.can" Breast cancer in females
+#"Cancer..Al" Cancer All Sites
+#"Colorectal" Colorectal Cancer
+#"Diabetes.r" Diabetes related
+#"Firearm.re" Firearm related
+#"Infant.Mor" Infant Mortality Rate
+#"Lung.Cance" Lung Cancer 
+#"Prostate.C" Prostate Cancer in Males
+#"Stroke..Ce" Stroke Cerebrovascular Disease
+#"Childhood"  Childhood Blood Lead Level Screening
+#"Childhoo_1" Childhood Lead Poisoning
+#"Gonorrhea"  Gonorrhea in Females
+#"Gonorrhe_1" Gonorrhea in Males
+#"Tuberculos" Tuberculosis
+#"Below.Pove" Below Poverty Level
+#"Crowded.Ho" Crowded Housing
+#"Dependency" Dependency
+#"No.High.Sc" No High School Diploma
+#"Per.Capita" Per Capita Income
+#"Unemployme" Unemployment
+
+
+
+#make sure all are numeric
+chicago$Birth.Rate<-as.numeric(chicago$Birth.Rate)
+chicago$General.Fe<-as.numeric(chicago$General.Fe)
+chicago$Low.Birth<-as.numeric(chicago$Low.Birth)
+chicago$Prenatal.C<-as.numeric(chicago$Prenatal.C)
+chicago$Preterm.Bi<-as.numeric(chicago$Preterm.Bi)
+chicago$Teen.Birth<-as.numeric(chicago$Teen.Birth)
+chicago$Assault..H<-as.numeric(chicago$Assault..H)
+chicago$Breast.can<-as.numeric(chicago$Breast.can)
+chicago$Cancer..Al<-as.numeric(chicago$Cancer..Al)
+chicago$Colorectal<-as.numeric(chicago$Colorectal)
+chicago$Diabetes.r<-as.numeric(chicago$Diabetes.r)
+chicago$Firearm.re<-as.numeric(chicago$Firearm.re)
+chicago$Infant.Mor<-as.numeric(chicago$Infant.Mor)
+chicago$Lung.Cance<-as.numeric(chicago$Lung.Cance)
+chicago$Prostate.C<-as.numeric(chicago$Prostate.C)
+chicago$Stroke..Ce<-as.numeric(chicago$Stroke..Ce)
+chicago$Childhood<-as.numeric(chicago$Childhood)
+chicago$Childhoo_1<-as.numeric(chicago$Childhoo_1)
+chicago$Gonorrhea<-as.numeric(chicago$Gonorrhea)
+chicago$Gonorrhe_1<-as.numeric(chicago$Gonorrhe_1)
+chicago$Tuberculos<-as.numeric(chicago$Tuberculos)
+chicago$Below.Pove<-as.numeric(chicago$Below.Pove)
+chicago$Crowded.Ho<-as.numeric(chicago$Crowded.Ho)
+chicago$Dependency<-as.numeric(chicago$Dependency)
+chicago$No.High.Sc<-as.numeric(chicago$No.High.Sc)
+chicago$Per.Capita<-as.numeric(chicago$Per.Capita)
+chicago$Unemployme<-as.numeric(chicago$Unemployme)
+
+#examine spatial autocorrelation using spatial wts matrices, run stat tests of spatial autocorrelation
+
+#### MORAN'S I:
+#### H0: NO SPATIAL AUTOCORRELATION
+#### HA: YES SPATIAL AUTOCORRELATION
+
+
+#response variables: assault, breast cancer, cancer, colorectal cancer, diabetes, firearms, infant mortality rate, lung cancer, postate cancer, stroke
+#spatial regression; modeling data
+
+##using row weights
+moran.test(chicago$Birth.Rate,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$General.Fe,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Low.Birth,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Prenatal.C,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Preterm.Bi,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Teen.Birth,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Assault..H,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Breast.can,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Cancer..Al,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Colorectal,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Diabetes.r,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Firearm.re,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Infant.Mor,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Lung.Cance,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Prostate.C,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Stroke..Ce,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Childhood,listw=chicago_nbq_w, alternative='two.sided',na.action=na.omit)
+moran.test(chicago$Childhoo_1,listw=chicago_nbq_w, alternative='two.sided',na.action=na.omit)
+moran.test(chicago$Gonorrhea,listw=chicago_nbq_w, alternative='two.sided',na.action=na.omit)
+moran.test(chicago$Gonorrhe_1,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Tuberculos,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Below.Pove,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Crowded.Ho,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Dependency,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$No.High.Sc,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Per.Capita,listw=chicago_nbq_w, alternative='two.sided')
+moran.test(chicago$Unemployme,listw=chicago_nbq_w, alternative='two.sided')
+
+
+##using binary weights
+moran.test(chicago$Birth.Rate,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$General.Fe,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Low.Birth,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Prenatal.C,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Preterm.Bi,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Teen.Birth,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Assault..H,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Breast.can,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Cancer..Al,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Colorectal,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Diabetes.r,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Firearm.re,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Infant.Mor,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Lung.Cance,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Prostate.C,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Stroke..Ce,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Childhood,listw=chicago_nbq_wb, alternative='two.sided',na.action=na.omit)
+moran.test(chicago$Childhoo_1,listw=chicago_nbq_wb, alternative='two.sided',na.action=na.omit)
+moran.test(chicago$Gonorrhea,listw=chicago_nbq_wb, alternative='two.sided',na.action=na.omit)
+moran.test(chicago$Gonorrhe_1,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Tuberculos,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Below.Pove,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Crowded.Ho,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Dependency,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$No.High.Sc,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Per.Capita,listw=chicago_nbq_wb, alternative='two.sided')
+moran.test(chicago$Unemployme,listw=chicago_nbq_wb, alternative='two.sided')
+
+
+##### SPATIALLY AUTOCORRELATED:
+
+Birth Rate
+General fertility rate
+Low birth weight
+prenatal
+**not preterm births
+teen birth rates
+**not assault
+breast cancer
+cancer all
+colorectal cancer
+diabetes 
+**not firearms
+infant mortality rate
+lung cancer
+prostate
+stroke
+Childhood Blood Lead Level Screening
+Childhood Lead Poisoning
+**not gonorrhea males
+**not gonorrhea fem
+**not tuberculosis
+**not below poverty level
+crowded housing
+dependency 
+**no high school
+income per capita
+unemployment
+
+
+#"Birth.Rate" Birth Rate
+#"General.Fe" General Fertility Rate
+#"Low.Birth"  Low Birth Weight
+#"Prenatal.C" Prenatal Care Beginning in First Trimester
+#"Teen.Birth" Teen Birth rate
+#"Breast.can" Breast cancer in females
+#"Cancer..Al" Cancer All Sites
+#"Colorectal" Colorectal Cancer
+#"Diabetes.r" Diabetes related
+#"Infant.Mor" Infant Mortality Rate
+#"Lung.Cance" Lung Cancer 
+#"Prostate.C" Prostate Cancer in Males
+#"Stroke..Ce" Stroke Cerebrovascular Disease
+#"Childhood"  Childhood Blood Lead Level Screening
+#"Childhoo_1" Childhood Lead Poisoning
+#"Crowded.Ho" Crowded Housing
+#"Dependency" Dependency
+#"Per.Capita" Per Capita Income
+#"Unemployme" Unemployment
+
+
+#moran plots
+
+png('moranplot_birthrate.png')
+moran.plot(chicago$Birth.Rate, chicago_nbq_w,labels=chicago$AREA_NUMBE, main ='Birth Rate Moran Plot')
+dev.off()
+
+png('moranplot_genfertilityrate.png')
+moran.plot(chicago$General.Fe, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'General Fertility Rate Moran Plot')
+dev.off()
+
+png('moranplot_lowbirthwt.png')
+moran.plot(chicago$Low.Birth, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Low Birth Weight Moran Plot')
+dev.off()
+
+png('moranplot_prenatal.png')
+moran.plot(chicago$Prenatal.C, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Prenatal Care Beginning in First Trimester Moran Plot ')
+dev.off()
+
+png('moranplot_pretermbirth.png')
+moran.plot(chicago$Preterm.Bi, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Preterm Birth Moran Plot')
+dev.off()
+
+png('moranplot_teenbirthrate.png')
+moran.plot(chicago$Teen.Birth, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Teen Birth rate Moran Plot')
+dev.off()
+
+png('moranplot_assault.png')
+moran.plot(chicago$Assault..H, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Assault Homicide Moran Plot')
+dev.off()
+
+png('moranplot_breastcancer.png')
+moran.plot(chicago$Breast.can, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Breast cancer in females Moran Plot')
+dev.off()
+
+png('moranplot_cancerall.png')
+moran.plot(chicago$Cancer..Al, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Cancer All Sites Moran Plot')
+dev.off()
+
+png('moranplot_colorectalcancer.png')
+moran.plot(chicago$Colorectal, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Colorectal Cancer Moran Plot')
+dev.off()
+
+png('moranplot_diabetes.png')
+moran.plot(chicago$Diabetes.r, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Diabetes related Moran Plot')
+dev.off()
+
+png('moranplot_firearm.png')
+moran.plot(chicago$Firearm.re, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Firearm related Moran Plot')
+dev.off()
+
+png('moranplot_infantmortality.png')
+moran.plot(chicago$Infant.Mor, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Infant Mortality Rate Moran Plot')
+dev.off()
+
+png('moranplot_lungcancer.png')
+moran.plot(chicago$Lung.Cance, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Lung Cancer Moran Plot')
+dev.off()
+
+png('moranplot_prostatecancer.png')
+moran.plot(chicago$Prostate.C, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Prostate Cancer in Males Moran Plot')
+dev.off()
+
+png('moranplot_stroke.png')
+moran.plot(chicago$Stroke..Ce, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Stroke Cerebrovascular Disease Moran Plot')
+dev.off()
+
+png('moranplot_childleadscreening.png')
+moran.plot(chicago$Childhood, chicago_nbq_w,labels=chicago$AREA_NUMBE,zero.policy=TRUE, main = 'Childhood Blood Lead Level Screening Moran Plot')
+dev.off()
+
+png('moranplot_childleadpoisoning.png')
+moran.plot(chicago$Childhoo_1, chicago_nbq_w,labels=chicago$AREA_NUMBE, zero.policy=TRUE,main = 'Childhood Lead Poisoning Moran Plot')
+dev.off()
+
+png('moranplot_gonorrheaFem.png')
+moran.plot(chicago$Gonorrhea, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Gonorrhea in Females Moran Plot')
+dev.off()
+
+png('moranplot_gonorrheaMale.png')
+moran.plot(chicago$Gonorrhe_1, chicago_nbq_w,labels=chicago$AREA_NUMBE, zero.policy=TRUE, main = 'Gonorrhea in Males Moran Plot')
+dev.off()
+
+png('moranplot_Tuberculosis.png')
+moran.plot(chicago$Tuberculos, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Tuberculosis Moran Plot')
+dev.off()
+
+png('moranplot_belowpov.png')
+moran.plot(chicago$Below.Pove, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Below Poverty Level Moran Plot')
+dev.off()
+
+png('moranplot_crowdedhousing.png')
+moran.plot(chicago$Crowded.Ho, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Crowded Housing Moran Plot')
+dev.off()
+
+png('moranplot_dependency.png')
+moran.plot(chicago$Dependency, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Dependency Moran Plot')
+dev.off()
+
+png('moranplot_nohsdiploma.png')
+moran.plot(chicago$No.High.Sc, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'No High School Diploma Moran Plot')
+dev.off()
+
+png('moranplot_income.png')
+moran.plot(chicago$Per.Capita, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Per Capita Income Moran Plot')
+dev.off()
+
+png('moranplot_unemployment.png')
+moran.plot(chicago$Unemployme, chicago_nbq_w,labels=chicago$AREA_NUMBE, main = 'Unemployment Moran Plot')
+dev.off()
+
+
+
+####local moran's i test
+##row weights
+localmoran(chicago$Birth.Rate,listw=chicago_nbq_w, alternative='two.sided')
+localmorant(chicago$General.Fe,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Low.Birth,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Prenatal.C,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Preterm.Bi,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Teen.Birth,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Assault..H,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Breast.can,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Cancer..Al,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Colorectal,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Diabetes.r,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Firearm.re,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Infant.Mor,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Lung.Cance,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Prostate.C,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Stroke..Ce,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Childhood,listw=chicago_nbq_w, alternative='two.sided',na.action=na.omit)
+localmoran(chicago$Childhoo_1,listw=chicago_nbq_w, alternative='two.sided',na.action=na.omit)
+localmoran(chicago$Gonorrhea,listw=chicago_nbq_w, alternative='two.sided',na.action=na.omit)
+localmoran(chicago$Gonorrhe_1,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Tuberculos,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Below.Pove,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Crowded.Ho,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Dependency,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$No.High.Sc,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Per.Capita,listw=chicago_nbq_w, alternative='two.sided')
+localmoran(chicago$Unemployme,listw=chicago_nbq_w, alternative='two.sided')
+
+#binary weights
+localmoran(chicago$Birth.Rate,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$General.Fe,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Low.Birth,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Prenatal.C,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Preterm.Bi,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Teen.Birth,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Assault..H,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Breast.can,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Cancer..Al,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Colorectal,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Diabetes.r,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Firearm.re,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Infant.Mor,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Lung.Cance,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Prostate.C,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Stroke..Ce,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Childhood,listw=chicago_nbq_wb, alternative='two.sided',na.action=na.omit)
+localmoran(chicago$Childhoo_1,listw=chicago_nbq_wb, alternative='two.sided',na.action=na.omit)
+localmoran(chicago$Gonorrhea,listw=chicago_nbq_wb, alternative='two.sided',na.action=na.omit)
+localmoran(chicago$Gonorrhe_1,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Tuberculos,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Below.Pove,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Crowded.Ho,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Dependency,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$No.High.Sc,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Per.Capita,listw=chicago_nbq_wb, alternative='two.sided')
+localmoran(chicago$Unemployme,listw=chicago_nbq_wb, alternative='two.sided')
+
+
+
+###########################################################
+#"Birth.Rate" Birth Rate
+#"General.Fe" General Fertility Rate
+#"Low.Birth"  Low Birth Weight
+#"Prenatal.C" Prenatal Care Beginning in First Trimester
+#"Preterm.Bi" Preterm Birth
+#"Teen.Birth" Teen Birth rate
+#"Assault..H" Assault Homicide
+#"Breast.can" Breast cancer in females
+#"Cancer..Al" Cancer All Sites
+#"Colorectal" Colorectal Cancer
+#"Diabetes.r" Diabetes related
+#"Firearm.re" Firearm related
+#"Infant.Mor" Infant Mortality Rate
+#"Lung.Cance" Lung Cancer 
+#"Prostate.C" Prostate Cancer in Males
+#"Stroke..Ce" Stroke Cerebrovascular Disease
+#"Childhood"  Childhood Blood Lead Level Screening
+#"Childhoo_1" Childhood Lead Poisoning
+#"Gonorrhea"  Gonorrhea in Females
+#"Gonorrhe_1" Gonorrhea in Males
+#"Tuberculos" Tuberculosis
+#"Below.Pove" Below Poverty Level
+#"Crowded.Ho" Crowded Housing
+#"Dependency" Dependency
+#"No.High.Sc" No High School Diploma
+#"Per.Capita" Per Capita Income
+#"Unemployme" Unemployment
+
+################################################################# OLS REGRESSION & stepwise ###########################
+
+#response variables:  
+#breast cancer, cancer, colorectal cancer, diabetes, infant mortality rate, 
+#lung cancer, prostate cancer, stroke, Childhood Blood Lead Level Screening, Childhood Lead Poisoning
+
+#dealing with NA
+chii<-data.frame(chicago$Birth.Rate,chicago$General.Fe,chicago$Low.Birth,chicago$Prenatal.C, chicago$Preterm.Bi,chicago$Teen.Birth,chicago$Assault..H,chicago$Breast.can,chicago$Cancer..Al,chicago$Colorectal,chicago$Diabetes.r, chicago$Firearm.re,chicago$Infant.Mor,chicago$Lung.Cance, chicago$Prostate.C,chicago$Stroke..Ce,chicago$Childhood,chicago$Childhoo_1,chicago$Gonorrhea,chicago$Gonorrhe_1,chicago$Tuberculos,chicago$Below.Pove,chicago$Crowded.Ho,chicago$Dependency,chicago$No.High.Sc,chicago$Per.Capita, chicago$Unemployme)
+
+> names(chii)
+ [1] "chicago.Birth.Rate" "chicago.General.Fe" "chicago.Low.Birth"  "chicago.Prenatal.C" "chicago.Preterm.Bi"
+ [6] "chicago.Teen.Birth" "chicago.Assault..H" "chicago.Breast.can" "chicago.Cancer..Al" "chicago.Colorectal"
+[11] "chicago.Diabetes.r" "chicago.Firearm.re" "chicago.Infant.Mor" "chicago.Lung.Cance" "chicago.Prostate.C"
+[16] "chicago.Stroke..Ce" "chicago.Childhood"  "chicago.Childhoo_1" "chicago.Gonorrhea"  "chicago.Gonorrhe_1"
+[21] "chicago.Tuberculos" "chicago.Below.Pove" "chicago.Crowded.Ho" "chicago.Dependency" "chicago.No.High.Sc"
+[26] "chicago.Per.Capita" "chicago.Unemployme"
+
+
+#########################################Breast cancer model
+
+Breast.cancerlm<- lm(chicago.Breast.can~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+summary(Breast.cancerlm)
+
+
+#stepwise
+stepbreast<-stepAIC(Breast.cancerlm, direction="both")
+
+Call:
+lm(formula = chicago.Breast.can ~ chicago.General.Fe + chicago.Assault..H + 
+    chicago.Crowded.Ho + chicago.Dependency, data = na.omit(chii))
+
+Coefficients:
+       (Intercept)  chicago.General.Fe  chicago.Assault..H  chicago.Crowded.Ho  chicago.Dependency  
+           25.2870             -0.2516              0.2040             -0.2078              0.4962  
+
+
+#new Breast cancer regression
+Breast.cancerlm<- lm(chicago.Breast.can~ chicago.General.Fe + chicago.Assault..H + chicago.Crowded.Ho + chicago.Dependency , data=na.omit(chii))
+
+step.Breast.cancerlm<- lm(chicago.Breast.can~ chicago.General.Fe + chicago.Assault..H + chicago.Crowded.Ho + chicago.Dependency , data=na.omit(chii))
+summary(step.Breast.cancerlm)
+
+Call:
+lm(formula = chicago.Breast.can ~ chicago.General.Fe + chicago.Assault..H + 
+    chicago.Crowded.Ho + chicago.Dependency, data = na.omit(chii))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-31.3922  -9.4704  -0.0901  11.5522  29.8067 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         25.2870     5.9023   4.284 6.86e-05 ***
+chicago.General.Fe  -0.2516     0.1166  -2.157  0.03508 *  
+chicago.Assault..H   0.2040     0.1122   1.818  0.07415 .  
+chicago.Crowded.Ho  -0.2078     0.1365  -1.523  0.13319    
+chicago.Dependency   0.4962     0.1335   3.717  0.00045 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 16.19 on 59 degrees of freedom
+Multiple R-squared:  0.2227,	Adjusted R-squared:   0.17 
+F-statistic: 4.225 on 4 and 59 DF,  p-value: 0.004489
+
+
+###############cancer all
+
+cancerlm<- lm(chicago.Cancer..Al~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+summary(cancerlm)
+
+stepcancer<-stepAIC(cancerlm, direction="both")
+
+#chicago.Cancer..Al ~ chicago.Low.Birth + chicago.Prenatal.C + chicago.Firearm.re + chicago.Dependency + chicago.Per.Capita
+
+step.cancerlm<-lm(chicago.Cancer..Al~chicago.Low.Birth + chicago.Prenatal.C + chicago.Firearm.re +chicago.Dependency + chicago.Per.Capita , data=na.omit(chii))
+
+
+summary(step.cancerlm)
+
+Call:
+lm(formula = chicago.Cancer..Al ~ chicago.Low.Birth + chicago.Prenatal.C + 
+    chicago.Firearm.re + chicago.Dependency + chicago.Per.Capita, 
+    data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-32.180 -10.123  -0.175   9.352  39.538 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        11.09294   11.66016   0.951  0.34537    
+chicago.Low.Birth  -0.42726    0.13061  -3.271  0.00181 ** 
+chicago.Prenatal.C -0.24288    0.13065  -1.859  0.06810 .  
+chicago.Firearm.re  0.22040    0.09527   2.314  0.02426 *  
+chicago.Dependency  0.89807    0.15709   5.717 3.97e-07 ***
+chicago.Per.Capita  0.32275    0.11514   2.803  0.00687 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 14.78 on 58 degrees of freedom
+Multiple R-squared:  0.6219,	Adjusted R-squared:  0.5893 
+F-statistic: 19.08 on 5 and 58 DF,  p-value: 3.565e-11
+
+
+###########################colorectal cancer
+
+
+colorectallm<-lm(chicago.Colorectal~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+stepcolorectal<-stepAIC(colorectallm, direction="both")
+
+#chicago.Colorectal ~ chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Firearm.re + chicago.Gonorrhe_1
+
+step.colorectallm<-lm(chicago.Colorectal~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Firearm.re + chicago.Gonorrhe_1 , data=na.omit(chii))
+
+summary(step.colorectallm)
+
+Call:
+lm(formula = chicago.Colorectal ~ chicago.Birth.Rate + chicago.General.Fe + 
+    chicago.Low.Birth + chicago.Firearm.re + chicago.Gonorrhe_1, 
+    data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-41.185 -11.160  -0.416   9.622  39.480 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         51.4874     8.0858   6.368 3.35e-08 ***
+chicago.Birth.Rate  -0.5518     0.1721  -3.207  0.00219 ** 
+chicago.General.Fe   0.3400     0.1305   2.606  0.01163 *  
+chicago.Low.Birth   -0.4066     0.1256  -3.237  0.00200 ** 
+chicago.Firearm.re   0.1793     0.1028   1.744  0.08652 .  
+chicago.Gonorrhe_1  -0.1847     0.1089  -1.696  0.09516 .  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 16.17 on 58 degrees of freedom
+Multiple R-squared:  0.3317,	Adjusted R-squared:  0.274 
+F-statistic: 5.756 on 5 and 58 DF,  p-value: 0.000222
+
+
+#######################Diabetes
+
+diabeteslm<-lm(chicago.Diabetes.r~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+stepdiabetes<-stepAIC(diabeteslm, direction="both")
+
+
+step.diabeteslm<-lm(chicago.Diabetes.r~chicago.Teen.Birth + chicago.Dependency , data=na.omit(chii))
+
+summary(step.diabeteslm)
+
+Call:
+lm(formula = chicago.Diabetes.r ~ chicago.Teen.Birth + chicago.Dependency, 
+    data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-42.750  -7.306   0.027  10.307  34.957 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        10.44414    5.03493   2.074   0.0423 *  
+chicago.Teen.Birth  0.24296    0.09832   2.471   0.0163 *  
+chicago.Dependency  0.50786    0.12034   4.220 8.24e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 16.54 on 61 degrees of freedom
+Multiple R-squared:  0.3603,	Adjusted R-squared:  0.3393 
+F-statistic: 17.18 on 2 and 61 DF,  p-value: 1.21e-06
+
+
+########################Infant Mortality Rate 
+infantlm<-lm(chicago.Infant.Mor~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+stepinfant<-stepAIC(infantlm, direction="both")
+
+#chicago.Infant.Mor ~ chicago.General.Fe + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Dependency + chicago.Unemployme
+
+step.infantlm<-lm(chicago.Infant.Mor~chicago.General.Fe + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Dependency + chicago.Unemployme, data=na.omit(chii))
+
+summary(step.infantlm)
+
+Call:
+lm(formula = chicago.Infant.Mor ~ chicago.General.Fe + chicago.Gonorrhea + 
+    chicago.Gonorrhe_1 + chicago.Dependency + chicago.Unemployme, 
+    data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-30.705 -10.652   0.422   8.739  39.385 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         45.3909     8.1623   5.561 7.12e-07 ***
+chicago.General.Fe   0.3617     0.1176   3.076   0.0032 ** 
+chicago.Gonorrhea   -0.1686     0.1135  -1.485   0.1429    
+chicago.Gonorrhe_1   0.1633     0.1096   1.490   0.1415    
+chicago.Dependency  -0.6706     0.1364  -4.916 7.61e-06 ***
+chicago.Unemployme  -0.1678     0.1156  -1.451   0.1521    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 15.97 on 58 degrees of freedom
+Multiple R-squared:  0.329,	Adjusted R-squared:  0.2712 
+F-statistic: 5.689 on 5 and 58 DF,  p-value: 0.0002459
+
+
+###################Lung cancer
+lungcanclm<-lm(chicago.Lung.Cance~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+steplung<-stepAIC(lungcanclm, direction="both")
+
+#chicago.Lung.Cance ~ chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Firearm.re + chicago.Dependency
+
+step.lungcanclm<-lm(chicago.Lung.Cance~chicago.General.Fe + chicago.Low.Birth + chicago.Firearm.re + chicago.Dependency , data=na.omit(chii))
+
+summary(step.lungcanclm)
+
+
+Call:
+lm(formula = chicago.Lung.Cance ~ chicago.General.Fe + chicago.Low.Birth + 
+    chicago.Firearm.re + chicago.Dependency, data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-32.244  -9.808  -2.945   8.359  32.832 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        23.83097    7.62854   3.124  0.00277 ** 
+chicago.General.Fe -0.32925    0.10912  -3.017  0.00376 ** 
+chicago.Low.Birth  -0.31965    0.13136  -2.433  0.01801 *  
+chicago.Firearm.re  0.24300    0.09532   2.549  0.01341 *  
+chicago.Dependency  0.76569    0.14421   5.310 1.75e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 14.92 on 59 degrees of freedom
+Multiple R-squared:  0.5173,	Adjusted R-squared:  0.4846 
+F-statistic: 15.81 on 4 and 59 DF,  p-value: 7.568e-09
+
+
+#############Prostate Cancer
+
+prostatecanclm<-lm(chicago.Prostate.C~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+stepprostate<-stepAIC(prostatecanclm, direction="both")
+
+#chicago.Prostate.C ~ chicago.Low.Birth + chicago.Prenatal.C + chicago.Firearm.re + chicago.Dependency
+
+step.prostatecanclm<-lm(chicago.Prostate.C~chicago.Low.Birth + chicago.Prenatal.C + chicago.Firearm.re + chicago.Dependency, data=na.omit(chii))
+
+
+
+> step.prostatecanclm<-lm(chicago.Prostate.C~chicago.Low.Birth + chicago.Prenatal.C + chicago.Firearm.re + chicago.Dependency, data=na.omit(chii))
+> summary(step.prostatecanclm)
+
+Call:
+lm(formula = chicago.Prostate.C ~ chicago.Low.Birth + chicago.Prenatal.C + 
+    chicago.Firearm.re + chicago.Dependency, data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-32.395 -10.446   1.604  10.454  37.075 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         36.4074     9.0571   4.020 0.000168 ***
+chicago.Low.Birth   -0.4751     0.1404  -3.384 0.001274 ** 
+chicago.Prenatal.C  -0.2005     0.1403  -1.429 0.158325    
+chicago.Firearm.re   0.1760     0.1016   1.733 0.088328 .  
+chicago.Dependency   0.4634     0.1275   3.634 0.000586 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 15.89 on 59 degrees of freedom
+Multiple R-squared:  0.4993,	Adjusted R-squared:  0.4653 
+F-statistic: 14.71 on 4 and 59 DF,  p-value: 2.16e-08
+
+> step.prostatecanclm<-lm(chicago.Prostate.C~chicago.Low.Birth + chicago.Firearm.re + chicago.Dependency, data=na.omit(chii))
+> summary(step.prostatecanclm)
+
+Call:
+lm(formula = chicago.Prostate.C ~ chicago.Low.Birth + chicago.Firearm.re + 
+    chicago.Dependency, data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-33.260 -10.876   2.352   9.090  37.496 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         30.6910     8.1958   3.745 0.000407 ***
+chicago.Low.Birth   -0.5290     0.1364  -3.879 0.000263 ***
+chicago.Firearm.re   0.1864     0.1022   1.825 0.073028 .  
+chicago.Dependency   0.5019     0.1257   3.992 0.000181 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 16.03 on 60 degrees of freedom
+Multiple R-squared:  0.482,	Adjusted R-squared:  0.4561 
+F-statistic: 18.61 on 3 and 60 DF,  p-value: 1.191e-08
+
+
+##################stroke
+
+strokelm<-lm(chicago.Stroke..Ce~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+stepstroke<-stepAIC(strokelm, direction="both")
+
+#chicago.Stroke..Ce ~ chicago.Low.Birth + chicago.Firearm.re + chicago.Dependency
+
+step.strokelm<-lm(chicago.Stroke..Ce~chicago.Low.Birth + chicago.Firearm.re + chicago.Dependency , data=na.omit(chii))
+summary(step.strokelm)
+
+Call:
+lm(formula = chicago.Stroke..Ce ~ chicago.Low.Birth + chicago.Firearm.re + 
+    chicago.Dependency, data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-33.723 -12.378  -1.338  13.458  34.635 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)         15.0097     8.3559   1.796   0.0775 .  
+chicago.Low.Birth   -0.2478     0.1391  -1.782   0.0798 .  
+chicago.Firearm.re   0.2296     0.1042   2.204   0.0314 *  
+chicago.Dependency   0.6478     0.1282   5.054 4.33e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 16.34 on 60 degrees of freedom
+Multiple R-squared:  0.4356,	Adjusted R-squared:  0.4074 
+F-statistic: 15.44 on 3 and 60 DF,  p-value: 1.485e-07
+
+#####################lead screening
+
+screeninglm<-lm(chicago.Childhood~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+stepscreening<-stepAIC(screeninglm, direction="both")
+
+#chicago.Childhood ~ chicago.Prenatal.C + chicago.Gonorrhea + chicago.Tuberculos + chicago.Per.Capita + chicago.Unemployme
+
+step.screeninglm<-lm(chicago.Childhood~ chicago.Prenatal.C + chicago.Gonorrhea + chicago.Tuberculos + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+summary(step.screeninglm)
+
+Call:
+lm(formula = chicago.Childhood ~ chicago.Prenatal.C + chicago.Gonorrhea + 
+    chicago.Tuberculos + chicago.Per.Capita + chicago.Unemployme, 
+    data = na.omit(chii))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-25.246  -7.436  -0.265   6.919  33.101 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        79.15039    5.79356  13.662  < 2e-16 ***
+chicago.Prenatal.C  0.14662    0.09980   1.469  0.14720    
+chicago.Gonorrhea  -0.22711    0.08148  -2.787  0.00717 ** 
+chicago.Tuberculos -0.18410    0.08336  -2.208  0.03118 *  
+chicago.Per.Capita -0.64540    0.07472  -8.637 5.28e-12 ***
+chicago.Unemployme -0.17231    0.09082  -1.897  0.06277 .  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 11.67 on 58 degrees of freedom
+Multiple R-squared:  0.668,	Adjusted R-squared:  0.6394 
+F-statistic: 23.34 on 5 and 58 DF,  p-value: 9.055e-13
+
+
+
+###############################lead blood poisioning
+
+poisonlm<-lm(chicago.Childhoo_1~chicago.Birth.Rate + chicago.General.Fe + chicago.Low.Birth + chicago.Prenatal.C + chicago.Teen.Birth + chicago.Assault..H + chicago.Firearm.re + chicago.Gonorrhea + chicago.Gonorrhe_1 + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita + chicago.Unemployme, data=na.omit(chii))
+
+steppoison<-stepAIC(poisonlm, direction="both")
+
+#chicago.Childhoo_1 ~ chicago.Prenatal.C + chicago.Assault..H + chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + #chicago.Per.Capita
+
+step.poisonlm<-lm(chicago.Childhoo_1~ chicago.Prenatal.C + chicago.Assault..H +  chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + chicago.Per.Capita , data=na.omit(chii))
+
+summary(step.poisonlm)
+
+Call:
+lm(formula = chicago.Childhoo_1 ~ chicago.Prenatal.C + chicago.Assault..H + 
+    chicago.Tuberculos + chicago.Crowded.Ho + chicago.Dependency + 
+    chicago.Per.Capita, data = na.omit(chii))
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-7.946 -3.417  0.085  3.397 13.696 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        14.44793    3.88932   3.715 0.000465 ***
+chicago.Prenatal.C -0.11990    0.04224  -2.838 0.006272 ** 
+chicago.Assault..H  0.05053    0.03503   1.443 0.154572    
+chicago.Tuberculos -0.05627    0.03357  -1.676 0.099172 .  
+chicago.Crowded.Ho -0.06381    0.04101  -1.556 0.125254    
+chicago.Dependency  0.09067    0.04731   1.917 0.060316 .  
+chicago.Per.Capita -0.06264    0.03906  -1.604 0.114292    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 4.709 on 57 degrees of freedom
+Multiple R-squared:  0.4129,	Adjusted R-squared:  0.3511 
+F-statistic: 6.681 on 6 and 57 DF,  p-value: 2.164e-05
+
+
+
+
+
+
+
+lm.morantest(chi_breastc,chicago_nbq_w)
+
+
+
+
+        Global Moran's I for regression residuals
+
+data:  
+model: lm(formula = Breast.can ~ Birth.Rate + General.Fe + Low.Birth +
+Prenatal.C + Teen.Birth + Cancer..Al + Colorectal + Diabetes.r +
+Infant.Mor + Lung.Cance + Prostate.C + Stroke..Ce + Childhood +
+Childhoo_1 + Crowded.Ho + Dependency + Per.Capita + Unemployme, data =
+chicago)
+weights: chicago_nbq_w
+ 
+Moran I statistic standard deviate = 0.4472, p-value = 0.3274
+alternative hypothesis: greater 
+sample estimates:
+Observed Moran's I        Expectation           Variance 
+      -0.020674948       -0.051350947        0.004706376 
+
+
+> lm.LMtests(chi_breastc,chicago_nbq_w,test='all')
+
+        Lagrange multiplier diagnostics for spatial dependence
+
+data:  
+model: lm(formula = Breast.can ~ Birth.Rate + General.Fe + Low.Birth +
+Prenatal.C + Teen.Birth + Cancer..Al + Colorectal + Diabetes.r +
+Infant.Mor + Lung.Cance + Prostate.C + Stroke..Ce + Childhood +
+Childhoo_1 + Crowded.Ho + Dependency + Per.Capita + Unemployme, data =
+chicago)
+weights: chicago_nbq_w
+ 
+LMerr = 0.0746, df = 1, p-value = 0.7847
+
+
+        Lagrange multiplier diagnostics for spatial dependence
+
+data:  
+model: lm(formula = Breast.can ~ Birth.Rate + General.Fe + Low.Birth +
+Prenatal.C + Teen.Birth + Cancer..Al + Colorectal + Diabetes.r +
+Infant.Mor + Lung.Cance + Prostate.C + Stroke..Ce + Childhood +
+Childhoo_1 + Crowded.Ho + Dependency + Per.Capita + Unemployme, data =
+chicago)
+weights: chicago_nbq_w
+ 
+LMlag = 0.112, df = 1, p-value = 0.7379
+
+
+        Lagrange multiplier diagnostics for spatial dependence
+
+data:  
+model: lm(formula = Breast.can ~ Birth.Rate + General.Fe + Low.Birth +
+Prenatal.C + Teen.Birth + Cancer..Al + Colorectal + Diabetes.r +
+Infant.Mor + Lung.Cance + Prostate.C + Stroke..Ce + Childhood +
+Childhoo_1 + Crowded.Ho + Dependency + Per.Capita + Unemployme, data =
+chicago)
+weights: chicago_nbq_w
+ 
+RLMerr = 1.1709, df = 1, p-value = 0.2792
+
+
+        Lagrange multiplier diagnostics for spatial dependence
+
+data:  
+model: lm(formula = Breast.can ~ Birth.Rate + General.Fe + Low.Birth +
+Prenatal.C + Teen.Birth + Cancer..Al + Colorectal + Diabetes.r +
+Infant.Mor + Lung.Cance + Prostate.C + Stroke..Ce + Childhood +
+Childhoo_1 + Crowded.Ho + Dependency + Per.Capita + Unemployme, data =
+chicago)
+weights: chicago_nbq_w
+ 
+RLMlag = 1.2083, df = 1, p-value = 0.2717
+
+
+        Lagrange multiplier diagnostics for spatial dependence
+
+data:  
+model: lm(formula = Breast.can ~ Birth.Rate + General.Fe + Low.Birth +
+Prenatal.C + Teen.Birth + Cancer..Al + Colorectal + Diabetes.r +
+Infant.Mor + Lung.Cance + Prostate.C + Stroke..Ce + Childhood +
+Childhoo_1 + Crowded.Ho + Dependency + Per.Capita + Unemployme, data =
+chicago)
+weights: chicago_nbq_w
+ 
+SARMA = 1.2829, df = 2, p-value = 0.5265
+
+> 
+
+
+
+####################
+There are 6 tests performed to assess the spatial dependence of the model.
+
+First, Morans I is .07, but highly significant (p<0.0001), indicating strong spatial autocorrelation in the residuals.
+
+There are also 5 LM tests:
+The LM test for a missing spatially lagged DV (LMlag)
+The LM test for error dependence (LMerr)
+The robust LM error, which tests for error dependence in the possible presence of a missing lagged dependent variable
+The robust LM lag, which tests for 
+The SARMA test, which tests for both lag and error (not particularly useful because its high if either SL or SE is present)
+
+We see that both simple LM tests are significant, indicating the presence of spatial dependence
+The robust tests help us understand what type of spatial dependence may be at workboth are significant, but the lag measures is more so.
+
+This tells us we should run a spatial lag model.
+
+######################
+
+install.packages('lmtest')
+library(lmtest)
+> bptest(chi_breastc)
+
+        studentized Breusch-Pagan test
+
+data:  chi_breastc 
+BP = 14.0946, df = 18, p-value = 0.7229
+
+
+****indicates errors are heteroskedastic if small pval
+****indicates errors are homoskedastic if large pval
+
+***should be heteroskedastic since we have spatial dependence.
+
+#run spatial lag model
+
+
+
+> chi_breastc_lag<-lagsarlm(Breast.can~Birth.Rate + General.Fe + Low.Birth + Prenatal.C + Teen.Birth + Cancer..Al + Colorectal + Diabetes.r + Infant.Mor + Lung.Cance + Prostate.C + Stroke..Ce + Childhood + Childhoo_1 + Crowded.Ho + Dependency + Per.Capita + Unemployme, data=chicago,chicago_nbq_w)
+> chi_breastc_lag
+
+Call:
+lagsarlm(formula = Breast.can ~ Birth.Rate + General.Fe + Low.Birth + 
+    Prenatal.C + Teen.Birth + Cancer..Al + Colorectal + Diabetes.r + 
+    Infant.Mor + Lung.Cance + Prostate.C + Stroke..Ce + Childhood + 
+    Childhoo_1 + Crowded.Ho + Dependency + Per.Capita + Unemployme, 
+    data = chicago, listw = chicago_nbq_w)
+Type: lag 
+
+Coefficients:
+         rho  (Intercept)   Birth.Rate   General.Fe    Low.Birth   Prenatal.C 
+ 0.059086231 -3.730711092  0.031905901 -0.204372067  0.093718760  0.073862014 
+  Teen.Birth   Cancer..Al   Colorectal   Diabetes.r   Infant.Mor   Lung.Cance 
+ 0.069839385  0.600548247  0.037314110  0.088703555 -0.123103960 -0.451605401 
+  Prostate.C   Stroke..Ce    Childhood   Childhoo_1   Crowded.Ho   Dependency 
+-0.036416725  0.249378024  0.108991283  0.753248471  0.044616742 -0.085670070 
+  Per.Capita   Unemployme 
+ 0.181405750  0.003149107 
+
+Log likelihood: -297.4545 
+
+
